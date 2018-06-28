@@ -145,16 +145,19 @@ static void stabilizerTask(void* param)
 
     commanderGetSetpoint(&setpoint, &state);
 
-    sitAwUpdateSetpoint(&setpoint, &sensorData, &state);
+    /*sitAwUpdateSetpoint(&setpoint, &sensorData, &state);*/
 
     controller(&control, &setpoint, &sensorData, &state, tick);
 
     checkEmergencyStopTimeout();
 
+
+
     if (emergencyStop) {
       powerStop();
     } else {
       powerDistribution(&control);
+    	/*custPowerDistribution(3000.0, 0.0, 0.0, 0.0);*/
     }
 
     tick++;

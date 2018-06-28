@@ -52,7 +52,7 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
   }
 
   if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-    positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
+    // positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
   }
 
   if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
@@ -65,9 +65,9 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
       attitudeDesired.pitch = setpoint->attitude.pitch;
     }
 
-    attitudeControllerCorrectAttitudePID(state->attitude.roll, state->attitude.pitch, state->attitude.yaw,
-                                attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
-                                &rateDesired.roll, &rateDesired.pitch, &rateDesired.yaw);
+    //attitudeControllerCorrectAttitudePID(state->attitude.roll, state->attitude.pitch, state->attitude.yaw,
+    //                            attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
+    //                            &rateDesired.roll, &rateDesired.pitch, &rateDesired.yaw);
 
     // For roll and pitch, if velocity mode, overwrite rateDesired with the setpoint
     // value. Also reset the PID to avoid error buildup, which can lead to unstable
@@ -81,27 +81,32 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
       attitudeControllerResetPitchAttitudePID();
     }
 
+
+
     // TODO: Investigate possibility to subtract gyro drift.
+    /*
     attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
 
     attitudeControllerGetActuatorOutput(&control->roll,
                                         &control->pitch,
                                         &control->yaw);
+                                        */
 
-    control->yaw = -control->yaw;
+
+    //control->yaw = -control->yaw;
   }
 
   if (tiltCompensationEnabled)
   {
-    control->thrust = actuatorThrust / sensfusion6GetInvThrustCompensationForTilt();
+    control->thrust = actuatorThrust; // / sensfusion6GetInvThrustCompensationForTilt();
   }
   else
   {
     control->thrust = actuatorThrust;
   }
 
-  if (control->thrust == 0)
+  /*if (control->thrust == 0)
   {
     control->thrust = 0;
     control->roll = 0;
@@ -113,7 +118,21 @@ void controllerPid(control_t *control, setpoint_t *setpoint,
 
     // Reset the calculated YAW angle for rate control
     attitudeDesired.yaw = state->attitude.yaw;
-  }
+  }*/
+
+
+//  float yawFactor   = 300.0;
+//  float pitchFactor = 2000.0;
+//  float rollFactor  = 2000.0;
+//
+//  control->yaw    = setpoint->attitude.yaw * yawFactor;
+//  control->pitch  = ((float)-1.0) * setpoint->attitude.pitch * pitchFactor;
+//  control->roll   = setpoint->attitude.roll * rollFactor;
+//  control->thrust = setpoint->thrust;
+    control->yaw    = setpoint->attitude.yaw;
+    control->pitch  = setpoint->attitude.pitch;
+    control->roll   = setpoint->attitude.roll;
+    control->thrust = setpoint->thrust;
 }
 
 

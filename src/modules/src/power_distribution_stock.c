@@ -71,8 +71,54 @@ void powerStop()
   motorsSetRatio(MOTOR_M4, 0);
 }
 
+
+void custPowerDistribution(uint16_t m1, uint16_t m2, uint16_t m3, uint16_t m4)
+{
+    motorPower.m1 = (uint16_t) limitThrust(m1);
+    motorPower.m2 = (uint16_t) limitThrust(m2);
+    motorPower.m3 = (uint16_t) limitThrust(m3);
+    motorPower.m4 = (uint16_t) limitThrust(m4);
+
+
+    if(motorPower.m1 > 60000){
+    	motorPower.m1 = 60000;
+    }
+
+    if(motorPower.m2 > 60000){
+      motorPower.m2 = 60000;
+    }
+
+    if(motorPower.m3 > 60000){
+      motorPower.m3 = 60000;
+    }
+
+    if(motorPower.m4 > 60000){
+      motorPower.m4 = 60000;
+    }
+
+    if (motorSetEnable)
+    {
+      motorsSetRatio(MOTOR_M1, (uint16_t) motorPowerSet.m1);
+      motorsSetRatio(MOTOR_M2, (uint16_t) motorPowerSet.m2);
+      motorsSetRatio(MOTOR_M3, (uint16_t) motorPowerSet.m3);
+      motorsSetRatio(MOTOR_M4, (uint16_t) motorPowerSet.m4);
+    }
+    else
+    {
+      motorsSetRatio(MOTOR_M1, (uint16_t) motorPower.m1);
+      motorsSetRatio(MOTOR_M2, (uint16_t) motorPower.m2);
+      motorsSetRatio(MOTOR_M3, (uint16_t) motorPower.m3);
+      motorsSetRatio(MOTOR_M4, (uint16_t) motorPower.m4);
+    }
+
+}
+
+
 void powerDistribution(const control_t *control)
 {
+
+	custPowerDistribution(control->roll, control->thrust, control->yaw, control->pitch);
+	/*
   #ifdef QUAD_FORMATION_X
     int16_t r = control->roll / 2.0f;
     int16_t p = control->pitch / 2.0f;
@@ -105,6 +151,7 @@ void powerDistribution(const control_t *control)
     motorsSetRatio(MOTOR_M3, motorPower.m3);
     motorsSetRatio(MOTOR_M4, motorPower.m4);
   }
+  */
 }
 
 PARAM_GROUP_START(motorPowerSet)
