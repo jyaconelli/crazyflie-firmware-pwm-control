@@ -310,7 +310,7 @@ void logControlProcess()
       ret = logDeleteBlock( p.data[1] );
       break;
     case CONTROL_START_BLOCK:
-      ret = logStartBlock( p.data[1], p.data[2]*10);
+      ret = logStartBlock( p.data[1], p.data[2]); // remove *10 from p.data[2]
       break;
     case CONTROL_STOP_BLOCK:
       ret = logStopBlock( p.data[1] );

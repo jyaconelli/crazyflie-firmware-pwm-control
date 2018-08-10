@@ -28,7 +28,6 @@
 
 #include <string.h>
 #include "crtp_commander.h"
-
 #include "commander.h"
 #include "crtp.h"
 #include "param.h"
@@ -83,10 +82,12 @@ static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of 
 static YawModeType yawMode = DEFAULT_YAW_MODE; // Yaw mode configuration
 static bool carefreeResetFront;             // Reset what is front in carefree mode
 
-static bool thrustLocked = true;
+static bool thrustLocked = false;
 static bool altHoldMode = false;
 static bool posHoldMode = false;
 static bool posSetMode = false;
+
+
 
 /**
  * Rotate Yaw so that the Crazyflie will change what is considered front.
@@ -156,6 +157,8 @@ void crtpCommanderRpytCompactDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk
   values->pitch  = ((float) m4);
 
 
+
+
   if (commanderGetActivePriority() == COMMANDER_PRIORITY_DISABLE) {
     thrustLocked = true;
   }
@@ -268,6 +271,9 @@ void crtpCommanderRpytCompactDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk
   } else {
     setpoint->attitude.yaw = min(currYaw, 60000.f);
   }
+
+  setpoint->thrust = (float) min(rawThrust, 60000);
+
 
 
 }
@@ -293,9 +299,10 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
 
   //memcpy(&(values->pitch), &pitch, sizeof(float));
   values->roll   = (float) roll;
-  values->thrust = (float) thrust;
+  values->thrust = thrust;
   values->yaw    = ((float) yaw);
   values->pitch  = ((float) pitch);
+
 
 
   if (commanderGetActivePriority() == COMMANDER_PRIORITY_DISABLE) {
@@ -314,8 +321,11 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
     setpoint->thrust = min(rawThrust, MAX_THRUST);
   }
 
+  setpoint->thrust = min(rawThrust, MAX_THRUST);
+
+
   if (altHoldMode) {
-    setpoint->thrust = 0;
+    //setpoint->thrust = 0;
     setpoint->mode.z = modeVelocity;
 
     setpoint->velocity.z = ((float) rawThrust - 32767.f) / 32767.f;
@@ -349,7 +359,7 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
     setpoint->attitude.roll  = 0;
     setpoint->attitude.pitch = 0;
     setpoint->attitude.yaw = values->yaw;
-    setpoint->thrust = 0;
+    //setpoint->thrust = 0;
   } else {
     setpoint->mode.x = modeDisable;
     setpoint->mode.y = modeDisable;
@@ -412,7 +422,12 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
   }
 
 
+  setpoint->thrust = (float) min(values->thrust, MAX_THRUST);
+  setpoint->thrust = (float) min(values->roll, MAX_THRUST);
+
+
 }
+
 
 
 // Params for flight modes
