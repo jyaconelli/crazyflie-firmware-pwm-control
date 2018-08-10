@@ -34,6 +34,8 @@
 
 #include "stabilizer.h"
 
+#include "num.h"
+
 #include "sensors.h"
 #include "commander.h"
 #include "crtp_localization_service.h"
@@ -56,6 +58,9 @@ static control_t control;
 
 static StateEstimatorType estimatorType;
 static ControllerType controllerType;
+
+static uint32_t packedImuL;
+static uint32_t packedImuA;
 
 static void stabilizerTask(void* param);
 
@@ -149,6 +154,34 @@ static void stabilizerTask(void* param)
 
     controller(&control, &setpoint, &sensorData, &state, tick);
 
+
+    uint16_t x, y, z, ax, ay, az;
+    float lin_min = -50;
+    float lin_max =  50;
+
+    float ang_min = -360;
+    float ang_max =  360;
+
+    // convert from Gs to m/s^2
+    x  = (constrain(sensorData.acc.x * 9.81f, lin_min, lin_max) + 50) * 10.23f;
+    y  = (constrain(sensorData.acc.y * 9.81f, lin_min, lin_max) + 50) * 10.23f;
+    z  = (constrain(sensorData.acc.z * 9.81f, lin_min, lin_max) + 50) * 10.23f;
+
+
+    ax = (constrain(sensorData.gyro.x, ang_min, ang_max) + 360) * 1.42f;
+    ay = (constrain(sensorData.gyro.y, ang_min, ang_max) + 360) * 1.42f;
+    az = (constrain(sensorData.gyro.z, ang_min, ang_max) + 360) * 1.42f;
+
+    packedImuL =   (x & 0b1111111111)
+    	        + ((y & 0b1111111111) << 10)
+			    + ((z & 0b1111111111) << 20);
+
+	packedImuA =   (ax & 0b1111111111)
+			    + ((ay & 0b1111111111) << 10)
+			    + ((az & 0b1111111111) << 20);
+
+
+
     checkEmergencyStopTimeout();
 
 
@@ -189,7 +222,14 @@ LOG_GROUP_START(ctrltarget)
 LOG_ADD(LOG_FLOAT, roll, &setpoint.attitude.roll)
 LOG_ADD(LOG_FLOAT, pitch, &setpoint.attitude.pitch)
 LOG_ADD(LOG_FLOAT, yaw, &setpoint.attitudeRate.yaw)
+LOG_ADD(LOG_FLOAT, thrust, &setpoint.thrust)
+
 LOG_GROUP_STOP(ctrltarget)
+
+LOG_GROUP_START(compactImu)
+LOG_ADD(LOG_UINT32, l_xyz, &packedImuL)
+LOG_ADD(LOG_UINT32, a_xyz, &packedImuA)
+LOG_GROUP_STOP(compactImu)
 
 LOG_GROUP_START(stabilizer)
 LOG_ADD(LOG_FLOAT, roll, &state.attitude.roll)

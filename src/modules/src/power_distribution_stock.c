@@ -33,6 +33,9 @@
 
 static bool motorSetEnable = false;
 
+uint32_t packedMotors;
+
+
 static struct {
   uint32_t m1;
   uint32_t m2;
@@ -111,13 +114,19 @@ void custPowerDistribution(uint16_t m1, uint16_t m2, uint16_t m3, uint16_t m4)
       motorsSetRatio(MOTOR_M4, (uint16_t) motorPower.m4);
     }
 
+    packedMotors =   ((motorPower.m1 & 0xFF00) >> 8)
+  		           + ((motorPower.m2 & 0xFF00))
+                   + ((motorPower.m3 & 0xFF00) << 8)
+  				   + ((motorPower.m4 & 0xFF00) << 16);
+
+
 }
 
 
 void powerDistribution(const control_t *control)
 {
 
-	custPowerDistribution(control->roll, control->thrust, control->yaw, control->pitch);
+	custPowerDistribution(control->roll, (uint16_t) control->thrust, control->yaw, control->pitch);
 	/*
   #ifdef QUAD_FORMATION_X
     int16_t r = control->roll / 2.0f;
@@ -153,6 +162,11 @@ void powerDistribution(const control_t *control)
   }
   */
 }
+
+
+LOG_GROUP_START(motorCompact)
+LOG_ADD(LOG_UINT32, pwms, &packedMotors)
+LOG_GROUP_STOP(motorCompact)
 
 PARAM_GROUP_START(motorPowerSet)
 PARAM_ADD(PARAM_UINT8, enable, &motorSetEnable)
